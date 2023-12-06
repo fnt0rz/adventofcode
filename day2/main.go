@@ -27,7 +27,6 @@ func main() {
 
 func calculateNumberOfPossibleGames(games []string) (totalPart1 int, totalPart2 int) {
 	max := setOfMarbles{redMarbles: 12, blueMarbles: 14, greenMarbles: 13}
-	fmt.Println(max)
 
 	r := regexp.MustCompile(`Game ([0-9]+): (.*)`)
 
@@ -58,8 +57,6 @@ func calculateNumberOfPossibleGames(games []string) (totalPart1 int, totalPart2 
 		if errorsInSet == 0 {
 			totalPart1 += gamenr
 		}
-
-		fmt.Printf("maxValuesForSet: %v\n", maxValuesForSet)
 
 		totalPart2 += (maxValuesForSet["red"] * maxValuesForSet["green"] * maxValuesForSet["blue"])
 	}
