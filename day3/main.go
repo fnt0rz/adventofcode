@@ -7,13 +7,13 @@ import (
 )
 
 type part struct {
+	value      string
 	startIndex int
 	endIndex   int
 	lenght     int
 }
 
 func main() {
-
 	file, _ := os.ReadFile("./input.txt")
 	lines := strings.Split(string(file), "\n")
 
@@ -36,7 +36,8 @@ func partsPerLine(line string) (parts []part) {
 
 		if symbol == '.' && startIndex != 0 {
 			diff := index - startIndex
-			parts = append(parts, part{startIndex: startIndex, endIndex: index, lenght: diff})
+			value := line[startIndex:index]
+			parts = append(parts, part{startIndex: startIndex, endIndex: index, lenght: diff, value: value})
 			startIndex = 0
 		}
 	}
