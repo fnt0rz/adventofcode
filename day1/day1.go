@@ -1,7 +1,8 @@
-package main
+package day1
 
 import (
 	"fmt"
+	"main/utils"
 	"os"
 	"regexp"
 	"strings"
@@ -28,17 +29,12 @@ var digits = map[string]int{
 	"9":     9,
 }
 
-func check(e error) {
-	if e != nil {
-		panic(e.Error())
-	}
-}
-
-func main() {
-	file, err := os.ReadFile("./input.txt")
-	check(err)
+func Run() {
+	file := utils.GetData("1", false)
 
 	var lines = strings.Split(string(file), "\n")
+
+	defer utils.Timer("Day1")()
 
 	r := regexp.MustCompile(`\d|one|two|three|four|five|six|seven|eight|nine`)
 	result := 0

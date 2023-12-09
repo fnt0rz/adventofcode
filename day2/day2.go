@@ -1,8 +1,8 @@
-package main
+package day2
 
 import (
 	"fmt"
-	"os"
+	"main/utils"
 	"regexp"
 	"strconv"
 	"strings"
@@ -14,10 +14,12 @@ type setOfMarbles struct {
 	greenMarbles int
 }
 
-func main() {
+func Run() {
 
-	file, _ := os.ReadFile("input.txt")
+	file := utils.GetData("2", false)
 	lines := strings.Split(string(file), "\n")
+
+	defer utils.Timer("Day2")()
 
 	total1, total2 := calculateNumberOfPossibleGames(lines)
 

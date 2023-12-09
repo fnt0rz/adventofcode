@@ -1,8 +1,8 @@
-package main
+package day3
 
 import (
 	"fmt"
-	"os"
+	"main/utils"
 	"regexp"
 	"strconv"
 	"strings"
@@ -22,10 +22,12 @@ type symbol struct {
 	neighbours []neighbour
 }
 
-func main() {
+func Run() {
 
-	file, _ := os.ReadFile("./input.txt")
+	file := utils.GetData("3", false)
 	lines := strings.Split(string(file), "\n")
+
+	defer utils.Timer("day3")()
 
 	parts := map[string]int{}
 	gearValues := []int{}
