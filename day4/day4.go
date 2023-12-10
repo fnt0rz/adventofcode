@@ -2,50 +2,128 @@ package day4
 
 import (
 	"fmt"
+	"log"
 	"main/utils"
-	"regexp"
-	"slices"
+	"math"
 	"strconv"
 	"strings"
 )
 
+// First Star = 27059
+// Second Star = 5744979
+
 func Run() {
 	file := utils.GetData("4", false)
-	lines := strings.Split(file, "\n")
+	lines := strings.Split(string(file), "\n")
 
 	defer utils.Timer("day4")()
 
-	points := 0
-	for gamenr, line := range lines {
+	fmt.Println("first sum:", part1(lines))
+	fmt.Println("second sum:", part2(lines))
+}
 
-		r := regexp.MustCompile(`: (.*?) [|] (.*)`)
-		result := r.FindAllStringSubmatch(line, -1)
+func part1(lines []string) int {
+	sum := 0
 
-		cleaned := strings.ReplaceAll(strings.TrimSpace(result[0][1]), "  ", " ")
-		winningNumbers := strings.Split(cleaned, " ")
-
-		ints := make([]int, len(winningNumbers))
-		for i, s := range winningNumbers {
-			ints[i], _ = strconv.Atoi(s)
+	for _, line := range lines {
+		if strings.TrimSpace(line) == "" {
+			continue
 		}
 
-		ownNumbers := strings.Split(result[0][2], " ")
+		line = strings.TrimSpace(line[strings.Index(line, ":")+1:])
+		parts := strings.Split(line, "|")
+		winningNumbers, numbers := strings.Split(parts[0], " "), strings.Split(parts[1], " ")
 
-		pointsPergame := 0
-		for _, ownNumber := range ownNumbers {
-			nr, _ := strconv.Atoi(strings.TrimSpace(ownNumber))
-			if slices.Contains(ints, nr) {
-				if pointsPergame == 0 {
-					pointsPergame = 1
-				} else {
-					pointsPergame = pointsPergame * 2
-				}
+		winners := make(map[int]struct{})
+		for _, n := range winningNumbers {
+			if strings.TrimSpace(n) == "" {
+				continue
+			}
+
+			num, err := strconv.Atoi(n)
+			if err != nil {
+				log.Fatalf("strconv.Atoi(%v): %v", n, err)
+			}
+
+			winners[num] = struct{}{}
+		}
+
+		match := 0
+		for _, n := range numbers {
+			if strings.TrimSpace(n) == "" {
+				continue
+			}
+
+			num, err := strconv.Atoi(n)
+			if err != nil {
+				log.Fatalf("strconv.Atoi(%v): %v", n, err)
+			}
+
+			if _, ok := winners[num]; ok {
+				match++
 			}
 		}
 
-		fmt.Printf("Game %d: %d\n", gamenr, pointsPergame)
-		points += pointsPergame
+		if match > 0 {
+			sum += int(math.Pow(2, float64(match-1)))
+		}
 	}
+	return sum
+}
 
-	println("TotalPoints part1:", points)
+func part2(lines []string) int {
+	sum := 0
+	scratchCardCounts := make(map[string]int)
+
+	for i, line := range lines {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+
+		line = strings.TrimSpace(line[strings.Index(line, ":")+1:])
+		parts := strings.Split(line, "|")
+		winningNumbers, numbers := strings.Split(parts[0], " "), strings.Split(parts[1], " ")
+
+		winners := make(map[int]struct{})
+		for _, n := range winningNumbers {
+			if strings.TrimSpace(n) == "" {
+				continue
+			}
+
+			num, err := strconv.Atoi(n)
+			if err != nil {
+				log.Fatalf("strconv.Atoi(%v): %v", n, err)
+			}
+
+			winners[num] = struct{}{}
+		}
+
+		match := 0
+		for _, n := range numbers {
+			if strings.TrimSpace(n) == "" {
+				continue
+			}
+
+			num, err := strconv.Atoi(n)
+			if err != nil {
+				log.Fatalf("strconv.Atoi(%v): %v", n, err)
+			}
+
+			if _, ok := winners[num]; ok {
+				match++
+			}
+		}
+
+		copyCount := scratchCardCounts["cardIdx "+strconv.Itoa(i)]
+		scratchCardCounts["cardIdx "+strconv.Itoa(i)] = copyCount + 1
+		sum += copyCount + 1
+
+		for m := 1; m < match+1; m++ {
+			scratchCardCounts["cardIdx "+strconv.Itoa(i+m)] += 1
+			if copyCount > 0 {
+				scratchCardCounts["cardIdx "+strconv.Itoa(i+m)] += copyCount
+			}
+		}
+	}
+	return sum
 }
