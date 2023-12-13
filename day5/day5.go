@@ -6,6 +6,7 @@ import (
 	"math"
 	"slices"
 	"strings"
+	"sync"
 )
 
 const (
@@ -54,37 +55,51 @@ func Run() {
 func part2(seeds []mapRange, lines []string) {
 
 	mapTypes := getMapTypes(lines)
+	maps := map[string][]mapRange{}
 
-	seedToSoilMap := sourceToDestination(mapTypes[SOIL])
-	soilToFertMap := sourceToDestination(mapTypes[FERTILIZER])
-	fertToWaterMap := sourceToDestination(mapTypes[WATER])
-	waterToLight := sourceToDestination(mapTypes[LIGHT])
-	lightToTemp := sourceToDestination(mapTypes[TEMPERATURE])
-	tempToHumid := sourceToDestination(mapTypes[HUMIDITY])
-	humidToLocation := sourceToDestination(mapTypes[LOCATION])
-
-	diff := 0
-	for _, seedRange := range seeds {
-		d := seedRange.source_end - seedRange.source_start
-		diff += d
-	}
+	maps[SOIL] = sourceToDestination(mapTypes[SOIL])
+	maps[FERTILIZER] = sourceToDestination(mapTypes[FERTILIZER])
+	maps[WATER] = sourceToDestination(mapTypes[WATER])
+	maps[LIGHT] = sourceToDestination(mapTypes[LIGHT])
+	maps[TEMPERATURE] = sourceToDestination(mapTypes[TEMPERATURE])
+	maps[HUMIDITY] = sourceToDestination(mapTypes[HUMIDITY])
+	maps[LOCATION] = sourceToDestination(mapTypes[LOCATION])
 
 	lowestLocation := 0
+	max := 100
+
 	for _, seedRange := range seeds {
-		for i := seedRange.source_start; i < seedRange.source_end; i++ {
+		var wg sync.WaitGroup
+		jobQueue := make(chan int, max)
 
-			soil := addSpecsToSeed(i, &seedToSoilMap)
-			fertilizer := addSpecsToSeed(soil, &soilToFertMap)
-			water := addSpecsToSeed(fertilizer, &fertToWaterMap)
-			light := addSpecsToSeed(water, &waterToLight)
-			temperature := addSpecsToSeed(light, &lightToTemp)
-			humidity := addSpecsToSeed(temperature, &tempToHumid)
-			location := addSpecsToSeed(humidity, &humidToLocation)
+		for j := 0; j < max; j++ {
+			wg.Add(1)
 
-			if lowestLocation == 0 || location < lowestLocation {
-				lowestLocation = location
-			}
+			go func(ch chan int) {
+				defer wg.Done()
+
+				for seedId := range ch {
+					soil := addSpecsToSeed(seedId, maps[SOIL])
+					fertilizer := addSpecsToSeed(soil, maps[FERTILIZER])
+					water := addSpecsToSeed(fertilizer, maps[WATER])
+					light := addSpecsToSeed(water, maps[LIGHT])
+					temperature := addSpecsToSeed(light, maps[TEMPERATURE])
+					humidity := addSpecsToSeed(temperature, maps[HUMIDITY])
+					location := addSpecsToSeed(humidity, maps[LOCATION])
+
+					if lowestLocation == 0 || location < lowestLocation {
+						lowestLocation = location
+					}
+				}
+
+			}(jobQueue)
 		}
+		for i := seedRange.source_start; i < seedRange.source_end; i++ {
+			jobQueue <- i
+		}
+
+		close(jobQueue)
+		wg.Wait()
 	}
 
 	fmt.Println(lowestLocation)
@@ -119,13 +134,13 @@ func part1(seeds []int, lines []string) {
 	for _, s := range seeds {
 		newSeed := seed{id: s}
 
-		soil := addSpecsToSeed(newSeed.id, &seedToSoilMap)
-		fertilizer := addSpecsToSeed(soil, &soilToFertMap)
-		water := addSpecsToSeed(fertilizer, &fertToWaterMap)
-		light := addSpecsToSeed(water, &waterToLight)
-		temperature := addSpecsToSeed(light, &lightToTemp)
-		humidity := addSpecsToSeed(temperature, &tempToHumid)
-		newSeed.location = addSpecsToSeed(humidity, &humidToLocation)
+		soil := addSpecsToSeed(newSeed.id, seedToSoilMap)
+		fertilizer := addSpecsToSeed(soil, soilToFertMap)
+		water := addSpecsToSeed(fertilizer, fertToWaterMap)
+		light := addSpecsToSeed(water, waterToLight)
+		temperature := addSpecsToSeed(light, lightToTemp)
+		humidity := addSpecsToSeed(temperature, tempToHumid)
+		newSeed.location = addSpecsToSeed(humidity, humidToLocation)
 
 		specifiedSeeds = append(specifiedSeeds, newSeed)
 	}
@@ -165,9 +180,9 @@ func getMapTypes(lines []string) map[string][]mapInfo {
 	return mapTypes
 }
 
-func addSpecsToSeed(sourceId int, ranges *[]mapRange) int {
+func addSpecsToSeed(sourceId int, ranges []mapRange) int {
 
-	for _, mapRange := range *ranges {
+	for _, mapRange := range ranges {
 		if sourceId > mapRange.source_end || sourceId < mapRange.source_start {
 			continue
 		}
