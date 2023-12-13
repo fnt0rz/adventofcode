@@ -32,27 +32,28 @@ type mapRange struct {
 	source_end   int
 }
 
-type seed struct {
-	id       int
-	location int
-}
-
 func Run() {
-	file := utils.GetData("5", false)
+	file := utils.GetData("5", true)
 	file = strings.Trim(file, "\n")
 	lines := strings.Split(file, "\n\n")
 
 	defer utils.Timer("day5")()
 
 	seeds := utils.ConvertStringSliceToIntSlice(strings.Split(lines[0], " ")[1:])
-	part1(seeds, lines)
 
-	seedRanges := seedRange(seeds)
-	part2(seedRanges, lines)
+	part1Seeds := []mapRange{}
+	for _, s := range seeds {
+		part1Seeds = append(part1Seeds, mapRange{source_start: s, source_end: s + 1})
+	}
+
+	solve(part1Seeds, lines)
+
+	part2Seeds := seedRange(seeds)
+	solve(part2Seeds, lines)
 
 }
 
-func part2(seeds []mapRange, lines []string) {
+func solve(seeds []mapRange, lines []string) {
 
 	mapTypes := getMapTypes(lines)
 	maps := map[string][]mapRange{}
@@ -116,43 +117,6 @@ func seedRange(seeds []int) []mapRange {
 	}
 
 	return seedRanges
-}
-
-func part1(seeds []int, lines []string) {
-
-	mapTypes := getMapTypes(lines)
-
-	seedToSoilMap := sourceToDestination(mapTypes[SOIL])
-	soilToFertMap := sourceToDestination(mapTypes[FERTILIZER])
-	fertToWaterMap := sourceToDestination(mapTypes[WATER])
-	waterToLight := sourceToDestination(mapTypes[LIGHT])
-	lightToTemp := sourceToDestination(mapTypes[TEMPERATURE])
-	tempToHumid := sourceToDestination(mapTypes[HUMIDITY])
-	humidToLocation := sourceToDestination(mapTypes[LOCATION])
-
-	specifiedSeeds := make([]seed, 0, len(seeds))
-	for _, s := range seeds {
-		newSeed := seed{id: s}
-
-		soil := addSpecsToSeed(newSeed.id, seedToSoilMap)
-		fertilizer := addSpecsToSeed(soil, soilToFertMap)
-		water := addSpecsToSeed(fertilizer, fertToWaterMap)
-		light := addSpecsToSeed(water, waterToLight)
-		temperature := addSpecsToSeed(light, lightToTemp)
-		humidity := addSpecsToSeed(temperature, tempToHumid)
-		newSeed.location = addSpecsToSeed(humidity, humidToLocation)
-
-		specifiedSeeds = append(specifiedSeeds, newSeed)
-	}
-
-	lowestLocation := 0
-	for _, s := range specifiedSeeds {
-		if lowestLocation == 0 || s.location < lowestLocation {
-			lowestLocation = s.location
-		}
-	}
-
-	fmt.Println(lowestLocation)
 }
 
 func getMapTypes(lines []string) map[string][]mapInfo {
